@@ -21,15 +21,13 @@ const Alert: React.FC<AlertProps> = ({variant = "info", title, message, onClose,
   ].join(' ');
 
   return (
-    <>
-      <Overlay show={overlay}>
-        <div className={classNames}>
-          <h4 className={styles.title}>{title}</h4>
-          <p className={styles.message}>{message}</p>
-          <Button variant="danger" onClick={onClose}>Закрыть</Button>
-        </div>
-      </Overlay>
-    </>
+    <Overlay show={overlay}>
+      <div className={classNames}>
+        <h4 className={styles.title}>{title}</h4>
+        <p className={styles.message}>{message}</p>
+        <Button variant="danger" onClick={onClose}>Закрыть</Button>
+      </div>
+    </Overlay>
   )
 };
 

@@ -8,6 +8,7 @@ import styles from "./LocationInAreaChecker.module.scss";
 import Alert from "../ui/Alert/Alert.tsx";
 import {Button} from "../ui/Button/Button.tsx";
 
+
 const LocationInAreaChecker: React.FC = () => {
   const [point, setPoint] = useState<TPoint>();
   const [polygon, setPolygon] = useState<TPoint[]>([]);
@@ -20,7 +21,11 @@ const LocationInAreaChecker: React.FC = () => {
     setAlert(true)
   }
 
-  const handleSetPolygon = (newPoint: TPoint) => {
+  const handleSetPolygon = (newPoints: TPoint[]) => {
+    setPolygon(newPoints);
+  }
+
+  const handleAddPointToPolygon = (newPoint: TPoint) => {
     setPolygon(prevPoints => [...prevPoints, newPoint]);
   }
 
@@ -44,7 +49,7 @@ const LocationInAreaChecker: React.FC = () => {
       <div className={styles.sideBar}>
         <Button variant="danger" onClick={onPolygonDelete} >Удалить полигон</Button>
       </div>
-      <Map point={point} polygon={polygon} setPolygon={handleSetPolygon}/>
+      <Map point={point} polygon={polygon} setPolygon={handleSetPolygon} addPointToPolygon={handleAddPointToPolygon} />
     </div>
   )
 };

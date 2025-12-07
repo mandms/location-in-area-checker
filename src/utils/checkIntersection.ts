@@ -15,14 +15,15 @@ function getIntersection(A: TPoint, B: TPoint, C: TPoint, D: TPoint) {
   const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
   const u = -(((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den);
 
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+  if (t > 0 && t < 1 && u > 0 && u < 1) {
     return true;
   }
+
 
   return false;
 }
 
-function getPolygonIntersection(newPoint: TPoint, polygon: TPoint[]) {
+function getPolygonIntersection(newPoint: TPoint, polygon: TPoint[], movedPointIndex?: number) {
 
   const n = polygon.length;
 
@@ -30,6 +31,39 @@ function getPolygonIntersection(newPoint: TPoint, polygon: TPoint[]) {
   {
     return false;
   }
+
+  if (movedPointIndex !== undefined) {
+    const prevIndex = movedPointIndex === 0 ? n - 1 : movedPointIndex - 1;
+    const nextIndex = movedPointIndex === n - 1 ? 0 : movedPointIndex + 1;
+
+    const prevPoint = polygon[prevIndex];
+    const nextPoint = polygon[nextIndex];
+
+    const newPoint1Start = prevPoint;
+    const newPoint1End = newPoint;
+    const newPoint2Start = newPoint;
+    const newPoint2End = nextPoint;
+
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const A = polygon[i];
+      const B = polygon[j];
+
+      if (i === movedPointIndex || j === movedPointIndex) {
+        continue;
+      }
+
+      if (getIntersection(A, B, newPoint1Start, newPoint1End)) {
+        return true;
+      }
+
+      if (getIntersection(A, B, newPoint2Start, newPoint2End)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
 
   const firstPoint = polygon[0];
   const lastPoint = polygon[n-1];

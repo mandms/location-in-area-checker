@@ -1,58 +1,95 @@
 import {MapContainer, Marker, Polygon, TileLayer, Tooltip, useMapEvents} from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
 import type {TPoint} from "../../types.ts";
-import getPolygonIntersection from "../../utils/checkIntersection.ts";
 import styles from "./Map.module.scss"
-import React, {useState} from "react";
+import React, {useRef, useState} from "react";
 import Alert from "../ui/Alert/Alert.tsx";
+import validatePoint from "../../utils/validatePoint.ts";
 
 
 export interface MapComponentProps {
   point: TPoint | undefined;
   polygon: TPoint[];
-  setPolygon: (newPoint: TPoint) => void;
+  setPolygon: (newPolygon: TPoint[]) => void;
+  addPointToPolygon: (newPoint: TPoint) => void;
 }
 
 interface AddPointInPolygonProps {
-  setPolygon: (newPoint: TPoint) => void;
+  addPointToPolygon: (newPoint: TPoint) => void;
   polygon: TPoint[];
   setAlert: (message: string) => void;
 }
 
-const AddPointInPolygon: React.FC<AddPointInPolygonProps> = ({setPolygon, polygon, setAlert}) => {
+const AddPointInPolygon: React.FC<AddPointInPolygonProps> = ({addPointToPolygon, polygon, setAlert}) => {
   useMapEvents({
     click(e) {
       const {lat, lng} = e.latlng;
 
-      const existingPoint = polygon.find(value => value.lat === lat && value.lng === lng)
+      const validation = validatePoint({lat, lng}, polygon)
 
-      if (existingPoint) {
-        setAlert("Нельзя потсавить точку т.к. там уже есть точка");
-        return null;
+      if (!validation.isValid) {
+        setAlert(validation.message || '')
+        return;
       }
 
-      if (getPolygonIntersection({lat, lng}, polygon)) {
-        setAlert("Нельзя потсавить точку т.к. она пересекается с гранью");
-        return null;
-      }
-
-      setPolygon({lat, lng});
+      addPointToPolygon({lat, lng});
     },
   });
 
   return null;
 }
 
-const Map: React.FC<MapComponentProps> = ({point, setPolygon, polygon}) => {
-  const [alert, setAlert] = useState<{ message: string, condition: boolean }>({message: "", condition: false});
+
+const Map: React.FC<MapComponentProps> = ({point, setPolygon, polygon, addPointToPolygon}) => {
+  const [isShowAlert, setIsShowAlert] = useState<{ message: string, condition: boolean }>({message: "", condition: false});
 
   const handleSetAlert = (message: string) => {
-    setAlert({message, condition: !alert.condition});
+    setIsShowAlert({message, condition: !isShowAlert.condition});
   }
 
   const handleClose = () => {
-    setAlert(prev => ({...prev, condition: false}));
+    setIsShowAlert(prev => ({...prev, condition: false}));
   }
+
+  const markerRefs = useRef<(L.Marker | null)[]>([]);
+
+  const createEventHandlers = (pointId: number) => {
+
+    const updatePolygonPoint = (marker: L.Marker) => {
+      const point = marker.getLatLng();
+      const updatedPoint: TPoint = {lat: point.lat, lng: point.lng};
+
+      const validation = validatePoint(point, polygon, pointId);
+
+      if (!validation.isValid) {
+        setIsShowAlert({message: validation.message || "", condition: !isShowAlert.condition})
+        const oldPoint = polygon.find((_, id) => id === pointId);
+        marker.setLatLng(oldPoint!)
+        setPolygon([...polygon])
+        return;
+      }
+
+      const newPoints = polygon.map((point, id) => {
+        if (id === pointId) {
+          return updatedPoint;
+        }
+        return point;
+      });
+
+      setPolygon(newPoints);
+    }
+
+
+    return {
+      dragend() {
+        const marker = markerRefs.current[pointId];
+        if (marker != null) {
+          updatePolygonPoint(marker);
+        }
+      },
+    };
+  };
+
 
   return (
     <>
@@ -61,18 +98,17 @@ const Map: React.FC<MapComponentProps> = ({point, setPolygon, polygon}) => {
           attribution=''
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
-        <AddPointInPolygon setPolygon={setPolygon} polygon={polygon} setAlert={handleSetAlert}/>
+        <AddPointInPolygon addPointToPolygon={addPointToPolygon} polygon={polygon} setAlert={handleSetAlert}/>
         {point && <Marker position={point}></Marker>}
         {polygon.length > 0 && polygon.map((point, idx) => (
-          <Marker draggable key={`${point.lng}-${point.lat}`} position={point}>
+          <Marker draggable eventHandlers={createEventHandlers(idx)} ref={ref => { markerRefs.current[idx] = ref }} key={`${point.lng}-${point.lat}`} position={point}>
             <Tooltip direction="top" offset={[0, 20]} opacity={1} permanent>{idx + 1}</Tooltip>
           </Marker>
         ))}
         {polygon.length > 0 && <Polygon pathOptions={{color: 'blue'}} positions={polygon}/>}
       </MapContainer>
-      {alert.condition &&
-          <Alert overlay={true} onClose={handleClose} variant="warning" message={alert.message} title="Ошибка"/>}
+      {isShowAlert.condition &&
+          <Alert overlay={true} onClose={handleClose} variant="warning" message={isShowAlert.message} title="Ошибка"/>}
     </>
   );
 }
