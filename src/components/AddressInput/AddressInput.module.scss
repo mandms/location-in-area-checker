@@ -1,0 +1,72 @@
+$bg-color-input: #f4f4f4;
+
+
+.addressInput {
+  flex: 1;
+  height: 48px;
+  border-radius: 0;
+  border: none;
+  background-color: $bg-color-input;
+  padding: 0 16px;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
+  z-index: 9999;
+  margin: 0;
+  padding: 0 16px;
+  background-color: $bg-color-input;
+  border-radius: 0 0 16px 16px;
+  list-style: none;
+}
+
+.addressInputContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 600px;
+  background-color: $bg-color-input;
+  border-radius: 16px;
+  overflow: hidden;
+
+  &:has(.suggestions) {
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.checkButton {
+  margin-left: 8px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.suggestion {
+  width: 100%;
+  padding: 0 16px;
+  margin: 16px 0;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 30px;
+  width: 90%;
+  max-width: 600px;
+  min-width: 300px;
+  z-index: 99999;
+}
